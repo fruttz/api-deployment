@@ -12,18 +12,11 @@ ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
 
 user_db = {
-    "asdf" : {
-        "username": "asdf",
-        "full_name": "ASDF",
-        "hashed_password": "$2b$12$EEcTaLvmkd86YT/hbkaXf.r9Wd5vsgI7E8H3emOiPoWw/J5DwA992",
-        "disabled": False
-    },
-
     "admin" : {
         "username": "admin",
-        "full_name": "Jeffrey Bezos",
-        "hashed_password": "$2b$12$xzLsXOPRkLXtpAcfQaPHdOyf1sIX4AV29anwXvjsLAbqDBdue3Hau",
-        "disabled": False
+        "full_name": "Mukidi Lutfi",
+        "hashed_password": "$2b$12$k2MnpY3oeX5.cxmQ6/kyL.ctsNOKjrYcuY1Z.nDuSDnQMOnbSkeU.",
+        "admin": True
     }
 
 }
@@ -35,18 +28,20 @@ pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
 app = FastAPI()
-menu = data["menu"]
+customer = data["customer"]
 
 
 
 class Item(BaseModel):
     id: int
-    nama: str
+    username: str
+    full_name: str
+    diamond: int
 
 class User(BaseModel):
     username: str
     full_name: Optional[str] = None
-    disabled: Optional[bool] = None
+    admin: Optional[bool] = None
 
 class UserDB(User):
     hashed_password: str
@@ -108,16 +103,16 @@ async def get_current_user(token: str = Depends(oauth2_scheme)):
         raise credentials_exception
     return user
 
-async def get_current_active_user(current_user: User = Depends(get_current_user)):
-    if current_user.disabled:
-        raise HTTPException(status_code=400, detail="Inactive user")
+async def get_current_admin(current_user: User = Depends(get_current_user)):
+    if not current_user.admin:
+        raise HTTPException(status_code=400, detail="Admin not found")
     return current_user
 
 ### CRUD ###
 
 @app.get("/")
 async def root():
-    return {"Home":"Home Page"}
+    return {"Home":"Welcome to Akademis Pay!"}
 
 @app.post("/token", response_model=Token)
 async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends()):
@@ -134,61 +129,63 @@ async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(
     )
     return {"access_token": access_token, "token_type": "bearer"}
 
-@app.get("/users/me/", response_model = User)
-async def read_users_me(current_user : User = Depends(get_current_active_user)):
-    return current_user
+@app.get("/admin/me/", response_model = User)
+async def read_admins_me(current_admin : User = Depends(get_current_admin)):
+    return current_admin
 
-@app.get("/menu")
-async def read_menu(current_user : User = Depends(get_current_active_user)):
-    return menu
 
-@app.post("/add-menu")
-async def add_menu(name: str, current_user : User = Depends(get_current_active_user)):
+@app.get("/read-all-customers")
+async def read_all_customers(current_user : User = Depends(get_current_admin)):
+    return customer
+
+@app.post("/add-customer")
+async def add_customer(username: str,full_name: str, diamond: int, current_user : User = Depends(get_current_admin)):
     id = 1
-    if (len(menu) > 0):
-        id = menu[len(menu)-1]['id']+1
-    new_item = {'id':id, 'name':name}
-    menu.append(dict(new_item))
+    if (len(customer) > 0):
+        id = customer[len(customer)-1]['id']+1
+    new_customer = {'id':id, 'username':username, 'full_name':full_name, "diamond":diamond}
+    customer.append(dict(new_customer))
     read_file.close()
     with open("db.json", "w") as write_file:
         json.dump(data, write_file, indent=4)
     write_file.close()
-    return new_item
+    return new_customer
 
-@app.get("/get-menu/{id}")
-async def get_menu(id: int, current_user : User = Depends(get_current_active_user)):
-    for menu_item in menu:
-        if menu_item['id'] == id:
-            return menu_item
+@app.get("/read-specific-customer/{username}")
+async def get_menu(username: str, current_user : User = Depends(get_current_admin)):
+    for specific_customer in customer:
+        if specific_customer['username'] == username:
+            return specific_customer
     raise HTTPException(
-        status_code=404, detail=f'Item not found'
+        status_code=404, detail=f'Customer not found'
     )
 
-@app.put("/update-menu/{id}")
-async def update_menu(id: int, name: str, current_user : User = Depends(get_current_active_user)):
-    for menu_item in menu:
-        if menu_item['id'] == id:
-            menu_item['name'] = name
+@app.put("/update-customer/{username}")
+async def update_customer(username: str,full_name: str, diamond: int, current_user : User = Depends(get_current_admin)):
+    for specific_customer in customer:
+        if specific_customer['username'] == username:
+            specific_customer['full_name'] = full_name
+            specific_customer['diamond'] = diamond
             read_file.close()
             with open("db.json", "w") as write_file:
                 json.dump(data, write_file, indent=4)
             write_file.close()
-            return {"message": "Item Updated Successfully"}
+            return {"message": "Customer Updated Successfully"}
     raise HTTPException(
-        status_code=404, detail=f'Item not found'
+        status_code=404, detail=f'Customer not found'
     )
 
-@app.delete("/del-menu/{id}")
-async def delete_menu(id: int, current_user : User = Depends(get_current_active_user)):
-    for menu_item in menu:
-        if menu_item['id'] == id:
-            menu.remove(menu_item)
+@app.delete("/del-customer/{username}")
+async def delete_customer(username: str, current_user : User = Depends(get_current_admin)):
+    for specific_customer in customer:
+        if specific_customer['username'] == username:
+            customer.remove(specific_customer)
             read_file.close()
             with open("db.json", "w") as write_file:
                 json.dump(data, write_file, indent=4)
             write_file.close()
-            return {"message": "Item Deleted Successfully"}
+            return {"message": "Customer Deleted Successfully"}
     raise HTTPException(
-        status_code=404, detail=f'Item not found'
+        status_code=404, detail=f'Customer not found'
     )
 

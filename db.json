@@ -1,21 +1,22 @@
 {
-
-    "menu": [
+    "customer": [
         {
             "id": 1,
-            "name": "bebek"
+            "username": "user1",
+            "full_name": "Yanto Gaming",
+            "diamond": 200
         },
         {
             "id": 2,
-            "name": "sayur"
-        },
-        {
-            "id": 3,
-            "name": "tempe"
+            "username": "user2",
+            "full_name": "Bambang Gaming",
+            "diamond": 500
         },
         {
             "id": 4,
-            "name": "bebek"
+            "username": "user3",
+            "full_name": "Joko Gaming",
+            "diamond": 1000
         }
     ]
 }
