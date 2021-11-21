@@ -1,0 +1,21 @@
+{
+
+    "menu": [
+        {
+            "id": 1,
+            "name": "bebek"
+        },
+        {
+            "id": 2,
+            "name": "sayur"
+        },
+        {
+            "id": 3,
+            "name": "tempe"
+        },
+        {
+            "id": 4,
+            "name": "bebek"
+        }
+    ]
+}
