@@ -1,1 +1,2 @@
-# api-deployment
+# credentials
+username: admin, password: admin
